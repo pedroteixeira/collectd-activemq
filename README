@@ -1,7 +1,9 @@
 Setup
 -----
-- apt-get install collectd
-- Enable the network plugin in /etc/collectd/collectd.conf
+apt-get install collectd
+
+
+Make sure you enable the network plugin in /etc/collectd/collectd.conf
 
 
 Run
