@@ -1,0 +1,8 @@
+
+First, enable the network plugin in collectd.
+
+
+Run
+---
+mvn exec:java -Dexec.mainClass="com.intelie.collectd.ActiveMQDispatcher"
+
