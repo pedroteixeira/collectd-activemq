@@ -2,11 +2,31 @@ Setup
 -----
 apt-get install collectd
 
-
 Make sure you enable the network plugin in /etc/collectd/collectd.conf
+
+
+Output
+------
+For now, the only output format supported is JSON. Look at the example below for the convention adopted:
+
+{ 'eventtype':'collectd',
+  'host':'pedro-laptop',
+  'plugin':'swap',
+  'pluginInstance': null,
+  'type':'swap',
+  'typeInstance':'free',
+  'timestamp':1273449902000,
+  'values':'1.998700544E9'
+}
+
+
+The values attribute can have multiple numbers concatanted with ';', with the option of being labelled by the datasource name, if available.
+For example, 'ds1:12;ds2:49'.
+
 
 
 Run
 ---
-mvn exec:java -Dexec.mainClass="com.intelie.collectd.ActiveMQDispatcher"
+mvn exec:java -Dexec.mainClass="com.intelie.collectd.ActiveMQDispatcher" -Dactivemq.url="failover:tcp://localhost:61616" -Dactivemq.queue=collectd
+
 

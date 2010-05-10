@@ -35,7 +35,17 @@ public class ActiveMQDispatcher implements Dispatcher {
     private final MessageProducer producer;
     private final QueueSession session;
 
+
+    protected void loadProperties() {
+        brokerUrl = System.getProperty("activemq.url", brokerUrl);
+        queue = System.getProperty("activemq.queue", queue);
+        eventType = System.getProperty("eventType", eventType);
+    }
+
+
     public ActiveMQDispatcher() throws JMSException {
+        loadProperties();
+
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
         QueueConnection conn = factory.createQueueConnection();
         session = conn.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
@@ -72,28 +82,6 @@ public class ActiveMQDispatcher implements Dispatcher {
     }
 
 
-    protected String getOutput(PluginData pd) {
-        StringBuffer sb = new StringBuffer();
-
-        if (pd.getHost() != null && !pd.getHost().isEmpty()) {
-            sb.append(pd.getHost());
-        }
-        if (pd.getPlugin() != null && !pd.getPlugin().isEmpty()) {
-            sb.append(delimiter).append(pd.getPlugin());
-        }
-        if (pd.getPluginInstance() != null && !pd.getPluginInstance().isEmpty()) {
-            sb.append(delimiter).append(pd.getPluginInstance());
-        }
-        if (pd.getType() != null && !pd.getType().isEmpty()) {
-            sb.append(delimiter).append(pd.getType());
-        }
-        if (pd.getTypeInstance() != null && !pd.getTypeInstance().isEmpty()) {
-            sb.append(delimiter).append(pd.getTypeInstance());
-        }
-        return sb.toString();
-
-    }
-
     /**
      * Convention for collectd output.
      *
@@ -118,7 +106,6 @@ public class ActiveMQDispatcher implements Dispatcher {
 
             if (i < size - 1) sb.append(";");
         }
-        sb.append("]");
 
         return sb.toString();
     }
@@ -126,17 +113,30 @@ public class ActiveMQDispatcher implements Dispatcher {
     protected String getJson(String host, Long ts, PluginData plugin, String output) {
 
         StringBuffer json = new StringBuffer("{");
-        json.append("'eventtype'").append("'").append(eventType).append("'").append(",")
-                .append("'host':").append("'").append(host).append("'").append(",")
-                .append("'plugin':").append("'").append(plugin.getPlugin()).append("'").append(",")
-                .append("'pluginInstance':").append("'").append(plugin.getPluginInstance()).append("'").append(",")
-                .append("'type':").append("'").append(plugin.getType()).append("'").append(",")
-                .append("'typeInstance':").append("'").append(plugin.getTypeInstance()).append("'").append(",")
-                .append("'timestamp':").append(ts).append(",")
-                .append("'output':").append("'").append(cleanString(output)).append("'")
-                .append("}");
+        json.append("'eventtype':").append("'").append(eventType).append("'").append(",");
+        json.append("'host':").append("'").append(host).append("'").append(",");
 
+        appendJsonProperty(json, "plugin", plugin.getPlugin());
+        json.append(",");
+        appendJsonProperty(json, "pluginInstance", plugin.getPluginInstance());
+        json.append(",");
+        appendJsonProperty(json, "type", plugin.getType());
+        json.append(",");
+        appendJsonProperty(json, "typeInstance", plugin.getTypeInstance());
+        json.append(",");
+        json.append("'timestamp':").append(ts).append(",");
+        json.append("'values':").append("'").append(cleanString(output)).append("'");
+        json.append("}");
         return json.toString();
+    }
+
+    protected void appendJsonProperty(StringBuffer sb, String key, String value) {
+        sb.append("'").append(key).append("':");
+        if (value != null && !value.isEmpty()) {
+            sb.append("'").append(value).append("'");
+        } else {
+            sb.append("null");
+        }
     }
 
     protected String cleanString(String out) {
