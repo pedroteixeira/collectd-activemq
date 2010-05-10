@@ -26,7 +26,6 @@ public class ActiveMQDispatcher implements Dispatcher {
 
     private static final Log LOG = LogFactory.getLog(ActiveMQDispatcher.class);
 
-    private final boolean namesOnly = "true".equals(Network.getProperty("namesOnly"));
     private String queue = "collectd";
     private String eventType = "collectd";
     private String brokerUrl = "failover:tcp://localhost:61616";
@@ -113,8 +112,11 @@ public class ActiveMQDispatcher implements Dispatcher {
     protected String getJson(String host, Long ts, PluginData plugin, String output) {
 
         StringBuffer json = new StringBuffer("{");
-        json.append("'eventtype':").append("'").append(eventType).append("'").append(",");
+
         json.append("'host':").append("'").append(host).append("'").append(",");
+        json.append("'eventtype':").append("'").append(eventType).append("'").append(",");
+        json.append("'text':").append("'").append(getTextOutput(plugin)).append("'").append(",");
+
 
         appendJsonProperty(json, "plugin", plugin.getPlugin());
         json.append(",");
@@ -128,6 +130,37 @@ public class ActiveMQDispatcher implements Dispatcher {
         json.append("'values':").append("'").append(cleanString(output)).append("'");
         json.append("}");
         return json.toString();
+    }
+
+    protected String getTextOutput(PluginData pd) {
+        StringBuffer sb = new StringBuffer();
+
+//        if (pd.getHost() != null && !pd.getHost().isEmpty()) {
+//            sb.append(pd.getHost());
+//        }
+//        append(delimiter)
+
+        if (pd.getPlugin() != null && !pd.getPlugin().isEmpty()) {
+            sb.append(pd.getPlugin());
+        }
+        if (pd.getPluginInstance() != null && !pd.getPluginInstance().isEmpty()) {
+            sb.append(delimiter).append(pd.getPluginInstance());
+        }
+        if (pd.getType() != null && !pd.getType().isEmpty()) {
+            sb.append(delimiter).append(pd.getType());
+        }
+        if (pd.getTypeInstance() != null && !pd.getTypeInstance().isEmpty()) {
+            sb.append(delimiter).append(pd.getTypeInstance());
+        }
+
+        if (pd instanceof ValueList) {
+            sb.append("=[");
+            sb.append(getOutput((ValueList) pd));
+            sb.append("]");
+        }
+
+        return sb.toString();
+
     }
 
     protected void appendJsonProperty(StringBuffer sb, String key, String value) {
